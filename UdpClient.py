@@ -26,5 +26,9 @@ class client:
     def send_type(self,type):   #int type
         self.buff.extend([0,0,0,type])
         self.sb()
-    def send_rotation(self,rot,data_type,accuracy,sensor_id,type):
+    
+    #rot: tuple(x,y,z,w)
+    #data_type: sensor.DATA_TYPE_NORMAL | sensor.DATA_TYPE_CORRECTION
+    #accuracy: 0
+    def send_rotation(self,rot,data_type=sensor.DATA_TYPE_NORMAL,type=c_packet_type.PACKET_ROTATION_DATA,accuracy=0,sensor_id=0):
         pass
