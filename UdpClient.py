@@ -1,33 +1,30 @@
-
+import socket
 #to be translated from SlimeVR-Tracker-ESP/src/udpclient.cpp
+from constants import *
 
-class packet_type:
-    PACKET_HEARTBEAT=0
-    PACKET_ROTATION=1
-    PACKET_GYRO=2
-    PACKET_HANDSHAKE=3
-    PACKET_ACCEL=4
-    PACKET_MAG=5
-    PACKET_RAW_CALIBRATION_DATA=6
-    PACKET_CALIBRATION_FINISHED=7
-    PACKET_CONFIG=8
-    PACKET_RAW_MAGENTOMETER=9
-    PACKET_PING_PONG=10
-    PACKET_SERIAL=11
-    PACKET_BATTERY_LEVEL=12
-    PACKET_TAP=13
-    PACKET_RESET_REASON=14
-    PACKET_SENSOR_INFO=15
-    PACKET_ROTATION_2=16
-    PACKET_ROTATION_DATA=17
-    PACKET_MAGENTOMETER_ACCURACY=18
-    
-    PACKET_RECIEVE_HEARTBEAT=1
-    PACKET_RECIEVE_VIBRATE=2
-    PACKET_RECIEVE_HANDSHAKE=3
-    PACKET_RECIEVE_COMMAND=4
-
-    COMMAND_CALLIBRATE=1
-    COMMAND_SEND_CONFIG=2
-    COMMAND_BLINK=3
-
+last_port=6970
+class client:
+    port=6969
+    def __init__(self,host='127.0.0.1',port=None):
+        if(port is None):
+            global last_port
+            port=last_port
+            last_port+=1
+        self.socket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind(('127.0.0.1',port))
+        self.buff=bytearray()
+        self.target=(host,c_misc.target_port)
+    def clear_buff(self):
+        self.buff.clear()
+    def send_buff(self):
+        self.socket.sendto(self.buff,self.target)
+    clear=clear_buff
+    sb=send_buff
+    def send_packet_number(self):
+        self.buff.extend(c_packets.eight_zero)
+        self.sb()
+    def send_type(self,type):   #int type
+        self.buff.extend([0,0,0,type])
+        self.sb()
+    def send_rotation(self,rot,data_type,accuracy,sensor_id,type):
+        pass
