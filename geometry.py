@@ -72,7 +72,7 @@ class point3d:
             return point3d(x*other,y*other,z*other)
         else:
             return NotImplemented
-    def __div__(self,other):
+    def __truediv__(self,other):
         if(isinstance(other,int) or isinstance(other,float)):
             x,y,z=tuple(self)
             return point3d(x/other,y/other,z/other)
@@ -83,6 +83,8 @@ class point3d:
             return self*other/abs(other)
         else:
             return NotImplemented
+    def unit(self):
+        return self/abs(self)
 _i=point3d(1,0,0)
 _j=point3d(0,1,0)
 _k=point3d(0,0,1)
@@ -94,6 +96,7 @@ class coordinate_sys:
         c=asign(axisZ*axisX)
         if(a or b or c):
             print("Warning!! the coordinate system's axes isn't perpendicular to each other")
+        
         self.axisX=axisX
         self.axisY=axisY
         self.axisZ=axisZ
@@ -119,8 +122,49 @@ class coordinate_sys:
             rotY*=180/math.pi
             rotZ*=180/math.pi
         return rotX,rotY,rotZ
+    def as_quaternion(self):
+        x1,y1,z1=self.axisX.unit()
+        x2,y2,z2=self.axisY.unit()
+        x3,y3,z3=self.axisZ.unit()
+        m=[[x1,x2,x3],[y1,y2,y3],[z1,z2,z3]]
+        tr = m[0][0] + m[1][1] + m[2][2]
+        if(tr>0):
+            s=sqrt(tr+1)*2
+            w=s/4
+            x=(m[2][1]-m[1][2])/s
+            y=(m[0][2]-m[2][0])/s
+            z=(m[1][0]-m[0][1])/s
+        elif((m[0][0]>m[1][1]) and (m[0][0]>m[2][2])):
+            s=sqrt(1+m[0][0]+m[1][1]-m[2][2])*2
+            w=(m[2][1]-m[1][2])/s
+            x=s/4
+            y=(m[1][0]+m[0][1])/s
+            z=(m[0][2]+m[2][0])/2
+        elif(m[1][1]>m[2][2]):
+            s=sqrt(1+m[1][1]-m[0][0]-m[2][2])*2
+            w=(m[0][2]-m[2][0])/s
+            x=(m[0][1]+m[1][0])/s
+            y=s/4
+            z=(m[1][2]+m[2][1])/s
+        else:
+            s=sqrt(1+m[2][2]-m[0][0]-m[1][1])*2
+            w=(m[1][0]-m[0][1])/s
+            x=(m[0][2]+m[2][0])/s
+            y=(m[1][2]+m[2][1])/s
+            z=s/4
+        return x,y,z,w
 if(__name__=='__main__'):
-    axisX=point3d(1,1,0)
-    axisY=_j
-    coor=coordinate_sys.from_approx_xy(axisX,axisY)
-    print(coor.calc_rot(in_degree=True))
+    
+    x=point3d(1,0,0)
+    print(x/2)
+    y=point3d(0,1,0)
+    z=point3d(0,0,1)
+    print(x,y,z,coordinate_sys(x,y,z).as_quaternion())
+    print(z,y,-x,coordinate_sys(z,y,-x).as_quaternion())
+
+    x=point3d(0,0,-1)
+    y=point3d(0,1,0)
+    z=point3d(1,0,0)
+    print(x,y,z,coordinate_sys(x,y,z).as_quaternion())
+
+    

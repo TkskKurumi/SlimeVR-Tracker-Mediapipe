@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import UdpClient,geometry,random
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
@@ -8,6 +9,8 @@ mp_pose = mp.solutions.pose
 IMAGE_FILES = []
 BG_COLOR = (192, 192, 192) # gray
 
+sensor1=UdpClient.client()
+ijk=[geometry._i,geometry._j,geometry._k]
 # For webcam input:
 cap = cv2.VideoCapture(r"C:\[WPF]JJDown\Download\【MV】昨日に奏でる明日の歌 - 1.【MV】昨日に奏でる明日の歌 _ YURiMental(Av333232413,P1).mp4")
 with mp_pose.Pose(
@@ -15,6 +18,10 @@ with mp_pose.Pose(
     min_tracking_confidence=0.5) as pose:
   while cap.isOpened():
     success, image = cap.read()
+    #random.shuffle(ijk)
+    rot=geometry.coordinate_sys(*ijk).as_quaternion()
+    sensor1.send_rotation(rot)
+
     if not success:
       print("Ignoring empty camera frame.")
       # If loading a video, use 'break' instead of 'continue'.
