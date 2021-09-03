@@ -32,8 +32,8 @@ class client:
         self.buff.extend(struct.pack('=q',q))
     def buf_int32(self,i):
         self.buff.extend(struct.pack('=i',i))
-    def buf_str(self,st):
-        self.buff.extend(st.encode('ascii'))
+    def buf_str(self,s):
+        self.buff.extend(struct.pack('=s',s))
     #rot: tuple(x,y,z,w)
     #data_type: sensor.DATA_TYPE_NORMAL | sensor.DATA_TYPE_CORRECTION
     #accuracy: 0
@@ -55,3 +55,6 @@ class client:
         self.buf_int32(0)
         self.buf_int32(0)
         self.buf_int32(0)
+        self.buf_int32(1)   #firmware build number
+        self.buf_str("0.0.1")
+        
