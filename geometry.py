@@ -14,14 +14,12 @@ class point3d:
         self.z=z
     def __iter__(self):
         return tuple([self.x,self.y,self.z]).__iter__()
+    
     def __pow__(self,other):
-        if(isinstance(other,point3d)):
-            #| i  j k | 
-            #|x1 y1 z1|=|y1 z1| * i + |z1 x1| * j + |x1 y1| * k
-            #|x2 y2 z2| |y2 z2|       |z2 x2|       |x2 y2|
-            x1,y1,z1=tuple(self)
-            x2,y2,z2=tuple(other)
-            x=y1*z2-z1*y2
+        if(isinstance(other,point3d)): #  _  _  _  cross product
+            x1,y1,z1=tuple(self)       #| i  j  k|           _             _             _
+            x2,y2,z2=tuple(other)      #|x1 y1 z1|=|y1 z1| * i + |z1 x1| * j + |x1 y1| * k
+            x=y1*z2-z1*y2              #|x2 y2 z2| |y2 z2|       |z2 x2|       |x2 y2|
             y=z1*x2-x1*z2
             z=x1*y2-y1*x2
             return point3d(x,y,z)
@@ -51,6 +49,22 @@ class point3d:
             x1,y1,z1=tuple(self)
             x2,y2,z2=tuple(other)
             return point3d(x1-x2,y1-y2,z1-z2)
+        else:
+            return NotImplemented
+    def __mul__(self,other):
+        if(isinstance(other,point3d)):
+            x1,y1,z1=tuple(self)
+            x2,y2,z2=tuple(other)
+            return x1*x2+y1*y2+z1*z2
+        elif(isinstance(other,int) or isinstance(other,float)):
+            x,y,z=tuple(self)
+            return point3d(x*other,y*other,z*other)
+        else:
+            return NotImplemented
+    def __div__(self,other):
+        if(isinstance(other,int) or isinstance(other,float)):
+            x,y,z=tuple(self)
+            return point3d(x/other,y/other,z/other)
         else:
             return NotImplemented
 if(__name__=='__main__'):
