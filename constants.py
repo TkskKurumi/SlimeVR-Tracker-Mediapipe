@@ -31,6 +31,9 @@ class c_packets:
     eight_zero=bytearray([0]*8)
 class c_misc:
     target_port=6969
+    BOARD_CUSTOM=4
+    IMU_BNO085=4
+    HARDWARE_MCU=1
 class sensor:
     DATA_TYPE_CORRECTION=2
     DATA_TYPE_NORMAL=1

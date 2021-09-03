@@ -1,3 +1,5 @@
+from math import sqrt,atan2
+import math
 def asign(i,eps=1e-8):
     if(i>eps):
         return 1
@@ -35,8 +37,17 @@ class point3d:
             return aequal(x1,x2) and aequal(y1,y2) and aequal(z1,z2)
         else:
             return NotImplemented
+    def __abs__(self):
+        x,y,z=self.x,self.y,self.z
+        ret=x*x+y*y+z*z
+        return sqrt(ret)
     def __neg__(self):
         return point3d(-self.x,-self.y,-self.z)
+    def __radd__(self,other):
+        if(other==0):       #for sum(list<points>)
+            return point3d(*tuple(self))    #copy
+        else:
+            return NotImplemented
     def __add__(self,other):
         if(isinstance(other,point3d)):
             x1,y1,z1=tuple(self)
@@ -67,7 +78,49 @@ class point3d:
             return point3d(x/other,y/other,z/other)
         else:
             return NotImplemented
+    def project_on(self,other):
+        if(isinstance(other,point3d)):
+            return self*other/abs(other)
+        else:
+            return NotImplemented
+_i=point3d(1,0,0)
+_j=point3d(0,1,0)
+_k=point3d(0,0,1)
+
+class coordinate_sys:
+    def __init__(self,axisX,axisY,axisZ):
+        a=asign(axisX*axisY)
+        b=asign(axisY*axisZ)
+        c=asign(axisZ*axisX)
+        if(a or b or c):
+            print("Warning!! the coordinate system's axes isn't perpendicular to each other")
+        self.axisX=axisX
+        self.axisY=axisY
+        self.axisZ=axisZ
+    def from_approx_xy(axisX,axisY):
+        axisZ=axisX**axisY
+        axisY=axisZ**axisX
+        return coordinate_sys(axisX,axisY,axisZ)
+    def calc_rot(self,refX=_i,refY=_j,refZ=_k,in_degree=False):
+        # calc rotation around x
+        y=self.axisY.project_on(refY)
+        z=self.axisY.project_on(refZ)
+        rotX=atan2(z,y)
+        #calc rotation around y
+        z=self.axisZ.project_on(refZ)
+        x=self.axisZ.project_on(refX)
+        rotY=atan2(x,z)
+        #calc rotation around z
+        x=self.axisX.project_on(refX)
+        y=self.axisX.project_on(refY)
+        rotZ=atan2(y,x)
+        if(in_degree):
+            rotX*=180/math.pi
+            rotY*=180/math.pi
+            rotZ*=180/math.pi
+        return rotX,rotY,rotZ
 if(__name__=='__main__'):
-    pos_x=point3d(1,0,0)
-    pos_y=point3d(0,1,0)
-    print(pos_x**pos_y)
+    axisX=point3d(1,1,0)
+    axisY=_j
+    coor=coordinate_sys.from_approx_xy(axisX,axisY)
+    print(coor.calc_rot(in_degree=True))
