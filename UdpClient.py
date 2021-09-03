@@ -1,11 +1,11 @@
-import socket,struct
+import socket,struct,random
 #to be translated from SlimeVR-Tracker-ESP/src/udpclient.cpp
 from constants import *
 
 last_port=6970
 class client:
     port=6969
-    def __init__(self,host='127.0.0.1',port=None):
+    def __init__(self,host='127.0.0.1',mac=None,port=None):
         if(port is None):
             global last_port
             port=last_port
@@ -14,6 +14,8 @@ class client:
         self.socket.bind(('127.0.0.1',port))
         self.buff=bytearray()
         self.target=(host,c_misc.target_port)
+        if(mac is None):
+            self.mac=[random.randrange(256) for i in range(6)]
     def clear_buff(self):
         self.buff.clear()
     def send_buff(self):
@@ -57,4 +59,6 @@ class client:
         self.buf_int32(0)
         self.buf_int32(1)   #firmware build number
         self.buf_str("0.0.1")
+        for i in self.mac:
+            self.buff.append(i)
         
