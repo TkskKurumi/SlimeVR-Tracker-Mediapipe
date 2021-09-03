@@ -1,8 +1,17 @@
 import socket,struct,random
 #to be translated from SlimeVR-Tracker-ESP/src/udpclient.cpp
 from constants import *
-
+import numpy as np
 last_port=6970
+all_sent=bytearray()
+debug_all_sent=False
+def print_all_sent():
+    for i in all_sent:
+        print(i,end=' ')
+    if(len(all_sent)>120):
+        exit()
+        pass
+    print()
 class client:
     port=6969
     def __init__(self,host='127.0.0.1',mac=None,port=None):
@@ -10,7 +19,7 @@ class client:
             global last_port
             port=last_port
             last_port+=1
-        self.byteOrder='!'
+        self.byteOrder='>'
         self.socket=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('127.0.0.1',port))
         self.buff=bytearray()
@@ -40,6 +49,7 @@ class client:
                 print('~~~Received VIBRATE!!!~~~')
             elif(incoming_type==c_packet_type.PACKET_RECIEVE_HANDSHAKE):
                 print('received handshake')
+                print(bytearray(data))
             elif(incoming_type==c_packet_type.PACKET_RECIEVE_COMMAND):
                 print('command',data)
             elif(incoming_type==c_packet_type.PACKET_CONFIG):
@@ -50,9 +60,15 @@ class client:
             
         self.handling_receive=False
     def send_buff(self):
-        self.handle_receive()
-        #print(self.buff,self.target)
+        
         self.socket.sendto(self.buff,self.target)
+        #self.handle_receive()
+        #print(self.buff,self.target)
+        #self.buff=bytearray()
+        if(debug_all_sent):
+            global all_sent
+            all_sent.extend(self.buff)
+            print_all_sent()
         self.buff.clear()
     clear=clear_buff
     sb=send_buff
@@ -60,17 +76,35 @@ class client:
         self.buff.extend(c_packets.eight_zero)
         self.sb()
     def send_type(self,type):   #int type
-        self.buff.extend([0,0,0])
-        self.buf_int32(type)
+        self.buff.extend([0,0,0,type])
         self.sb()
     def buf_float(self,f):
         self.buff.extend(struct.pack(self.byteOrder+'f',f))
+        print(len(struct.pack(self.byteOrder+'f',f)))
+        
     def buf_int64(self,q):
         self.buff.extend(struct.pack(self.byteOrder+'q',q))
     def buf_int32(self,i):
         self.buff.extend(struct.pack(self.byteOrder+'i',i))
+    def buf_uint32(self,i):
+        self.buff.extend(struct.pack(self.byteOrder+'I',i))
     def buf_str(self,s):
-        self.buff.extend(struct.pack(self.byteOrder+'s',s.encode('ascii')))
+        #self.buff.extend(struct.pack(self.byteOrder+'s',s.encode('ascii')))
+        self.buff.extend(s.encode('ascii'))
+        #print(s.encode('ascii'))
+        #print(s,struct.pack(self.byteOrder+'s',s.encode('ascii')))
+        #self.buff.append(0)
+    def buf_uint8(self,B):
+        self.buff.extend(struct.pack(self.byteOrder+"B",B))
+    def send_quat(self,quat,type=c_packet_type.PACKET_ROTATION):
+        x,y,z,w=quat
+        self.send_type(type)
+        self.send_packet_number()
+        self.buf_float(0.5)
+        self.buf_float(0.5)
+        self.buf_float(0.5)
+        self.buf_float(0.5)
+        self.sb()
     #rot: tuple(x,y,z,w)
     #data_type: sensor.DATA_TYPE_NORMAL | sensor.DATA_TYPE_CORRECTION
     #accuracy: 0
@@ -80,12 +114,12 @@ class client:
         self.send_type(type)
         self.send_packet_number()
         self.buff.append(sensor_id)
-        self.buff.append(data_type)
-        self.buf_float(x)
-        self.buf_float(y)
-        self.buf_float(z)
-        self.buf_float(w)
-        self.buff.append(accuracy)
+        #self.buff.append(data_type)
+        #self.buf_float(x)
+        #self.buf_float(y)
+        #self.buf_float(z)
+        #self.buf_float(w)
+        #self.buff.append(accuracy)
         self.sb()
     def send_sensor_info(self,id=0,sensor_state=1,type=c_packet_type.PACKET_SENSOR_INFO):
         self.send_type(type)
@@ -97,14 +131,18 @@ class client:
         print('send handshake')
         self.send_type(c_packet_type.PACKET_HANDSHAKE)
         self.send_packet_number()
-        self.buf_int32(c_misc.BOARD_CUSTOM) 
-        self.buf_int32(c_misc.IMU_BNO085)   #fake
-        self.buf_int32(c_misc.HARDWARE_MCU) #1 for esp8266
-        self.buf_int32(0)
-        self.buf_int32(0)
-        self.buf_int32(0)
-        self.buf_int32(1)   #firmware build number
-        self.buf_str("0.0.1")
+        self.buf_uint32(4) #4
+        self.buf_uint32(c_misc.IMU_BNO085)   #4 fake
+        self.buf_uint32(c_misc.HARDWARE_MCU) #1 for esp8266
+        
+        
+        self.buf_uint32(0)
+        self.buf_uint32(0)
+        self.buf_uint32(0)
+        self.buf_uint32(1)   #firmware build number
+        firmware_str="0.0.1"
+        self.buff.append(len(firmware_str))
+        self.buf_str(firmware_str)
         for i in self.mac:
             self.buff.append(i)
         self.sb()

@@ -29,7 +29,7 @@ class point3d:
             return NotImplemented
     def __str__(self):
         tup=tuple(self)
-        return 'point(%s)'%(tup,)
+        return 'point%s'%(tup,)
     def __equal__(self,other):
         if(isinstance(other,point3d)):
             x1,y1,z1=tuple(self)
@@ -128,7 +128,11 @@ class coordinate_sys:
         x3,y3,z3=self.axisZ.unit()
         m=[[x1,x2,x3],[y1,y2,y3],[z1,z2,z3]]
         tr = m[0][0] + m[1][1] + m[2][2]
+        #print(m[0])
+        #print(m[1])
+        #print(m[2])
         if(tr>0):
+            #print('ln135')
             s=sqrt(tr+1)*2
             w=s/4
             x=(m[2][1]-m[1][2])/s
@@ -152,19 +156,14 @@ class coordinate_sys:
             x=(m[0][2]+m[2][0])/s
             y=(m[1][2]+m[2][1])/s
             z=s/4
+        az=x*x+y*y+z*z+w*w
+        if(not aequal(az,1)):
+            print("warning quat isn't unit",az)
         return x,y,z,w
 if(__name__=='__main__'):
-    
-    x=point3d(1,0,0)
-    print(x/2)
-    y=point3d(0,1,0)
-    z=point3d(0,0,1)
-    print(x,y,z,coordinate_sys(x,y,z).as_quaternion())
-    print(z,y,-x,coordinate_sys(z,y,-x).as_quaternion())
-
-    x=point3d(0,0,-1)
-    y=point3d(0,1,0)
-    z=point3d(1,0,0)
-    print(x,y,z,coordinate_sys(x,y,z).as_quaternion())
+    def _(x,y,z):
+        print(x,y,x**y,coordinate_sys(x,y,x**y).as_quaternion())
+    _(_i,_j,_k)
+    _(_i,_k,_j)
 
     
