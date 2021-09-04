@@ -1,4 +1,4 @@
-# note, memo for learning how SlimeVR Tracker USP runs
+# note, memo for learning how SlimeVR Tracker ESP runs
 
 Find it hard to understand how it runs...
 
@@ -29,9 +29,7 @@ Find it hard to understand how it runs...
 
 ## bno080sensor.cpp
 
-## doubt
-
-how handshake and heartbeat is done
+...
 
 # consider how my implemention should run
 
@@ -41,6 +39,3 @@ how handshake and heartbeat is done
   + calc rotations
   + send rotations
 
-## doubt
-
-how handshake and heartbeat is done
