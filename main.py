@@ -34,7 +34,7 @@ def vecs2quat(axisX,axisY):
     return cord_sys.as_quaternion()
 while(detect.running):
     #print('ln33')
-    tps_handler.limit_fps(detect.fps*5)
+    tps_handler.limit_fps(120)
     tps=tps_handler.frame()
     dt=1/tps
     smoothing=math.e**(-dt*4)   #dt↑，smoothing↓

@@ -31,7 +31,7 @@ def run():
         
         with mp_pose.Pose(
             min_detection_confidence=0.5,
-            min_tracking_confidence=0.7,model_complexity=2) as pose:
+            min_tracking_confidence=0.7,model_complexity=1) as pose:
             while cap.isOpened():
                 fps_handler.limit_fps(30)
                 fps=fps_handler.frame()
@@ -70,8 +70,10 @@ def run():
                     right_ankle=landmark2point(landmarks[28])
                     left_knee=landmark2point(landmarks[25])
                     right_knee=landmark2point(landmarks[26])
-                    left_foot=landmark2point(landmark2point[31])
-                    right_foot=landmark2point(landmark2point[32])
+                    left_foot=landmark2point(landmarks[31])
+                    right_foot=landmark2point(landmarks[32])
+                    left_heel=landmark2point(landmarks[29])
+                    right_heel=landmark2point(landmarks[30])
 
                     v_left_leg=landmarks[27].visibility+landmarks[25].visibility
                     v_right_leg=landmarks[26].visibility+landmarks[28].visibility
@@ -94,7 +96,7 @@ def run():
                         if(v_left_foot<0.5):
                             lankle_Z=hip_X**lankle_Y
                         else:
-                            lankle_Z=left_ankle-left_foot
+                            lankle_Z=left_heel-left_foot
                         lankle_X=lankle_Y**lankle_Z
                         #lankle_axis=geometry.coordinate_sys.from_approx_xy(lankle_X,lankle_Y)
                         #lankle_quat=lankle_axis.as_quaternion()
@@ -105,7 +107,7 @@ def run():
                         if(v_right_foot<0.5):
                             rankle_Z=hip_X**rankle_Y
                         else:
-                            rankle_Z=right_ankle-right_foot
+                            rankle_Z=right_heel-right_foot
                         rankle_X=rankle_Y**rankle_Z
                         #rankle_axis=geometry.coordinate_sys.from_approx_xy(rankle_X,rankle_Y)
                         #rankle_quat=rankle_axis.as_quaternion()
