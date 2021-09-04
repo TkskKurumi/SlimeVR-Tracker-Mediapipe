@@ -75,6 +75,9 @@ class point3d:
     def __truediv__(self,other):
         if(isinstance(other,int) or isinstance(other,float)):
             x,y,z=tuple(self)
+            if(other==0):
+                print(self)
+                
             return point3d(x/other,y/other,z/other)
         else:
             return NotImplemented

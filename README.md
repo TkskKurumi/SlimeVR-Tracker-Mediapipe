@@ -1,3 +1,3 @@
 # SlimeVR-Tracker-Mediapipe
 
-WIP
+Far from perfect, but is basically usable.

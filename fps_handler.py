@@ -4,6 +4,8 @@ class fps_handler:
         self.t=time.time()
     def frame(self):
         t=time.time()
+        if(not(t-self.t)):
+            return 1
         ret=1/(t-self.t)
         self.t=t
         return ret
