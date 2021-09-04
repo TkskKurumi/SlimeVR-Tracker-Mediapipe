@@ -31,7 +31,7 @@ class client:
         self.handling_receive=False
         self.send_handshake()
     def show_sent(self):
-        print(len(self.sent),self.sent)
+        #print(len(self.sent),self.sent)
         self.sent=bytearray()
     def clear_buff(self):
         self.buff.clear()
@@ -79,10 +79,10 @@ class client:
     sb=send_buff
     def send_packet_number(self):
         self.buff.extend(c_packets.eight_zero)
-        self.sb()
+        #self.sb()
     def send_type(self,type):   #int type
         self.buff.extend([0,0,0,type])
-        self.sb()
+        #self.sb()
     def buf_float(self,f):
         self.buff.extend(struct.pack(self.byteOrder+'f',f))
         #print(len(struct.pack(self.byteOrder+'f',f)))

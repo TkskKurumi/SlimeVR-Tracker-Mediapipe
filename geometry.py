@@ -1,4 +1,4 @@
-from math import sqrt,atan2
+from math import sqrt,atan2,asin
 import math
 def asign(i,eps=1e-8):
     if(i>eps):
@@ -28,8 +28,8 @@ class point3d:
         else:
             return NotImplemented
     def __str__(self):
-        tup=tuple(self)
-        return 'point%s'%(tup,)
+        _=["%.2f"%i for i in self]
+        return 'point(%s)'%(', '.join(_))
     def __equal__(self,other):
         if(isinstance(other,point3d)):
             x1,y1,z1=tuple(self)
@@ -131,26 +131,31 @@ class coordinate_sys:
         #print(m[0])
         #print(m[1])
         #print(m[2])
+        
         if(tr>0):
             #print('ln135')
+            case=0
             s=sqrt(tr+1)*2
             w=s/4
             x=(m[2][1]-m[1][2])/s
             y=(m[0][2]-m[2][0])/s
             z=(m[1][0]-m[0][1])/s
         elif((m[0][0]>m[1][1]) and (m[0][0]>m[2][2])):
-            s=sqrt(1+m[0][0]+m[1][1]-m[2][2])*2
+            case=1
+            s=sqrt(1+m[0][0]-m[1][1]-m[2][2])*2
             w=(m[2][1]-m[1][2])/s
             x=s/4
             y=(m[1][0]+m[0][1])/s
-            z=(m[0][2]+m[2][0])/2
+            z=(m[0][2]+m[2][0])/s
         elif(m[1][1]>m[2][2]):
+            case=2
             s=sqrt(1+m[1][1]-m[0][0]-m[2][2])*2
             w=(m[0][2]-m[2][0])/s
             x=(m[0][1]+m[1][0])/s
             y=s/4
             z=(m[1][2]+m[2][1])/s
         else:
+            case=3
             s=sqrt(1+m[2][2]-m[0][0]-m[1][1])*2
             w=(m[1][0]-m[0][1])/s
             x=(m[0][2]+m[2][0])/s
@@ -158,8 +163,24 @@ class coordinate_sys:
             z=s/4
         az=x*x+y*y+z*z+w*w
         if(not aequal(az,1)):
-            print("warning quat isn't unit",az)
+            print("warning quat isn't unit",az,case,s)
         return x,y,z,w
+def quat_to_ypr(quat,in_degree=True):
+    x,y,z,w=quat
+    yaw,pitch,roll=0,0,0
+    try:
+        yaw = atan2(2.0*(y*z + w*x), w*w - x*x -y*y + z*z)
+        
+        pitch = asin(-2.0*(x*z - w*y))
+        roll = atan2(2.0*(x*y + w*z), w*w + x*x - y*y - z*z)
+    except Exception as e:
+        print(e)
+        
+    if(in_degree):
+        yaw*=180/math.pi
+        pitch*=180/math.pi
+        roll*=180/math.pi
+    return yaw,pitch,roll
 if(__name__=='__main__'):
     def _(x,y,z):
         print(x,y,x**y,coordinate_sys(x,y,x**y).as_quaternion())
