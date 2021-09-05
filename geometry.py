@@ -228,9 +228,10 @@ class quaternion:
     def invert(self):
         return self.conjugate()/self.sqnorm()
     def __str__(self):
-        return "quat%s"%(tuple(self),)
+        
+        return "quat(%s)"%(', '.join(['%.1f'%i for i in self]))
     def __neg__(self):
-        return quaternion()
+        return quaternion(-self.vec,-self.w)
 if(__name__=='__main__'):
     def _(x,y,z):
         print(x,y,x**y,coordinate_sys(x,y,x**y).as_quaternion())
@@ -243,6 +244,9 @@ if(__name__=='__main__'):
     
     print(quaternion.e()/q,q_1)
 
-    a=quaternion.e()
+    q=quaternion.from_xyzw(1,2,3,4)
+    a=quaternion.from_xyzw(0.7,0,0,0.7)
     calibrate=a/q
-    print(q*a,(-q)/a)
+    print(calibrate*q,calibrate*(-q))
+    print(quat_to_ypr(calibrate*q))
+    print(quat_to_ypr(calibrate*(-q)))

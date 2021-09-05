@@ -6,7 +6,7 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 fps_handler=FPSH()
-cap = cv2.VideoCapture(3)
+cap = cv2.VideoCapture(2)
 hide_image=True
 _i,_j,_k=geometry._i,geometry._j,geometry._k
 hip_X=_i
@@ -15,6 +15,11 @@ lankle_X=_i
 lankle_Y=_j
 rankle_X=_i
 rankle_Y=_j
+lleg_X=_i
+lleg_Y=_j
+rleg_X=_i
+rleg_Y=_j
+
 BG_COLOR = (192, 192, 192) # gray
 height=720
 width=1280
@@ -28,10 +33,12 @@ lm2p=landmark2point
 running=True
 fps=1
 calibrate_quat=geometry.quaternion.e()
+events=[]
 def run():
     
-    global cap,hide_image,fps_handler,height,width,running,fps
+    global cap,hide_image,fps_handler,height,width,running,fps,events
     global hip_X,hip_Y,lankle_X,lankle_Y,rankle_X,rankle_Y,calibrate_quat
+    global lleg_X,lleg_Y,rleg_X,rleg_Y
     try:
         
         with mp_pose.Pose(
@@ -96,10 +103,11 @@ def run():
                     
                     #update waist tracker info
                     hip_X=left_shoulder+left_hip-right_hip-right_shoulder
-                    #hip_X=hip_X*(1-smoothing)+_hip_X*smoothing
+                    #hip_X=left_hip-right_hip
+                    
                     hip_Y=left_hip+right_hip-left_shoulder-right_shoulder
-                    #hip_Y=hip_Y*(1-smoothing)+_hip_Y*smoothing
-                    hip_Z=hip_X**hip_Y
+                    
+                    
                     hip_axis=geometry.coordinate_sys.from_approx_xy(hip_X,hip_Y)
                     hip_quat=hip_axis.as_quaternion()
                     #hip_sensor.send_quat(hip_quat)
@@ -111,9 +119,11 @@ def run():
                         else:
                             lankle_Z=left_heel-left_foot
                         lankle_X=lankle_Y**lankle_Z
-                        #lankle_axis=geometry.coordinate_sys.from_approx_xy(lankle_X,lankle_Y)
-                        #lankle_quat=lankle_axis.as_quaternion()
-                        #lankle_sensor.send_quat(lankle_quat)
+                        
+                        lleg_Y=left_knee-left_hip
+                        lleg_Z=hip_X**lleg_Y
+                        lleg_X=lleg_Y**lleg_Z
+
                     if(v_right_leg>1):
                         #rankle_X=hip_X
                         rankle_Y=right_ankle-right_knee
@@ -122,18 +132,28 @@ def run():
                         else:
                             rankle_Z=right_heel-right_foot
                         rankle_X=rankle_Y**rankle_Z
-                        #rankle_axis=geometry.coordinate_sys.from_approx_xy(rankle_X,rankle_Y)
-                        #rankle_quat=rankle_axis.as_quaternion()
-                        #rankle_sensor.send_quat(rankle_quat)
-                    yaw,pitch,roll=geometry.quat_to_ypr(hip_quat)
+                        
+                        
+                        rleg_Y=right_knee-right_hip
+                        rleg_Z=hip_X**rleg_Y
+                        rleg_X=rleg_Y**rleg_Z
+
+                    yaw,pitch,roll=geometry.quat_to_ypr(calibrate_quat*hip_quat)
                     if(calibrate_time<time.time()):
-                        az="%.2ffps"%fps+"Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll)
+                        if(time.time()<calibrate_time+2):
+                            az="%s %s"%(calibrate_quat*hip_quat,slimevr_base.as_quaternion())
+                        else:
+                            az="%.2ffps"%fps+"Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll)
                         if(not calibrated):
                             calibrated=True
-                            hip_coord=geometry.coordinate_sys.from_approx_xy(hip_X,hip_Y)
+                            
                             q1=slimevr_base.as_quaternion()
-                            q2=hip_coord.as_quaternion()
+                            q2=hip_quat
                             calibrate_quat=q1/q2
+                            yaw,pitch,roll=geometry.quat_to_ypr(calibrate_quat*hip_quat)
+                            #print("Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll))
+                            print('111')
+                            print('111')
                     else:
                         az="%.1f seconds to calibrate"%(calibrate_time-time.time())
                         
@@ -148,6 +168,9 @@ def run():
                     hide_image=not hide_image
                 elif k==ord('c'):
                     calibrate_time=time.time()+3
+                    calibrated=False
+                else:
+                    events.append(('keypress',k))
     except Exception as e:
         traceback.print_exc()
     running=False

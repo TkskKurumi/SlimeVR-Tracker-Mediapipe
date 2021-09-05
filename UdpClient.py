@@ -29,7 +29,8 @@ class client:
         if(mac is None):
             self.mac=[random.randrange(256) for i in range(6)]
         self.handling_receive=False
-        self.send_handshake()
+        #self.send_handshake()
+        self.connected=False
     def show_sent(self):
         #print(len(self.sent),self.sent)
         self.sent=bytearray()
@@ -102,6 +103,9 @@ class client:
     def buf_uint8(self,B):
         self.buff.extend(struct.pack(self.byteOrder+"B",B))
     def send_quat(self,quat,type=c_packet_type.PACKET_ROTATION):
+        if(not self.connected):
+            self.connected=True
+            self.send_handshake()
         x,y,z,w=quat
         self.send_type(1)
         self.send_packet_number()
@@ -115,6 +119,8 @@ class client:
     #data_type: sensor.DATA_TYPE_NORMAL | sensor.DATA_TYPE_CORRECTION
     #accuracy: 0
     def send_rotation(self,rot,data_type=sensor.DATA_TYPE_NORMAL,type=c_packet_type.PACKET_ROTATION_DATA,accuracy=0,sensor_id=0):
+        
+
         x,y,z,w=rot
         #print(rot,type)
         self.send_type(type)
