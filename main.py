@@ -46,9 +46,9 @@ while(detect.running):
     hip_X=linear(hip_X,detect.hip_X,smoothing)
     hip_Y=linear(hip_Y,detect.hip_Y,smoothing)
     
-    lankle_quat=vecs2quat(lankle_X,lankle_Y)
-    rankle_quat=vecs2quat(rankle_X,rankle_Y)
-    hip_quat=vecs2quat(hip_X,hip_Y)
+    lankle_quat=vecs2quat(lankle_X,lankle_Y)*detect.calibrate_quat
+    rankle_quat=vecs2quat(rankle_X,rankle_Y)*detect.calibrate_quat
+    hip_quat=vecs2quat(hip_X,hip_Y)*detect.calibrate_quat
     
     lankle_sensor.send_quat(lankle_quat)
     rankle_sensor.send_quat(rankle_quat)

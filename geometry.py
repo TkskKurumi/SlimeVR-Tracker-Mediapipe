@@ -1,5 +1,7 @@
 from math import sqrt,atan2,asin
 import math
+
+from cv2 import calibrateCamera
 def asign(i,eps=1e-8):
     if(i>eps):
         return 1
@@ -103,6 +105,12 @@ class coordinate_sys:
         self.axisX=axisX
         self.axisY=axisY
         self.axisZ=axisZ
+    def do_unit_axes(self):
+        self.axisX=self.axisX.unit()
+        self.axisY=self.axisY.unit()
+        self.axisZ=self.axisZ.unit()
+    def united(self):
+        return coordinate_sys(self.axisX.unit(),self.axisY.unit(),self.axisZ.unit())
     def from_approx_xy(axisX,axisY):
         axisZ=axisX**axisY
         axisY=axisZ**axisX
@@ -167,7 +175,7 @@ class coordinate_sys:
         az=x*x+y*y+z*z+w*w
         if(not aequal(az,1)):
             print("warning quat isn't unit",az,case,s)
-        return x,y,z,w
+        return quaternion.from_xyzw(x,y,z,w)
 def quat_to_ypr(quat,in_degree=True):
     x,y,z,w=quat
     yaw,pitch,roll=0,0,0
@@ -184,10 +192,57 @@ def quat_to_ypr(quat,in_degree=True):
         pitch*=180/math.pi
         roll*=180/math.pi
     return yaw,pitch,roll
+class quaternion:
+    def e():
+        return quaternion(point3d(0,0,0),1)
+    def __init__(self,vec,w):
+        self.vec=vec
+        self.w=w
+    def from_xyzw(x,y,z,w):
+        return quaternion(point3d(x,y,z),w)
+    def __mul__(self,other):
+        #https://zhuanlan.zhihu.com/p/97186723
+        if(isinstance(other,quaternion)):
+            v=self.vec**other.vec+self.vec*other.w+other.vec*self.w
+            w=self.w*other.w-self.vec*other.vec
+            return quaternion(v,w)
+        else:
+            return NotImplemented
+    def conjugate(self):
+        return quaternion(-self.vec,self.w)
+    def __iter__(self):
+        return [self.vec.x,self.vec.y,self.vec.z,self.w].__iter__()
+    def __truediv__(q,r):
+        if(isinstance(r,int) or isinstance(r,float)):
+            return quaternion(q.vec/r,q.w/r)
+        elif(isinstance(q,quaternion)):
+            return q*r.invert()
+    def __abs__(self):
+        return self.norm()
+    def sqnorm(self):
+        x,y,z=self.vec
+        w=self.w
+        return x*x+y*y+z*z+w*w
+    def norm(self):
+        return sqrt(self.sqnorm)
+    def invert(self):
+        return self.conjugate()/self.sqnorm()
+    def __str__(self):
+        return "quat%s"%(tuple(self),)
+    def __neg__(self):
+        return quaternion()
 if(__name__=='__main__'):
     def _(x,y,z):
         print(x,y,x**y,coordinate_sys(x,y,x**y).as_quaternion())
     _(_i,_j,_k)
     _(_i,_k,_j)
-
+    q=quaternion.from_xyzw(1,2,3,4)
+    q_1=q.invert()
+    print(q*q_1)
+    print(coordinate_sys(_i,_j,_k).as_quaternion())
     
+    print(quaternion.e()/q,q_1)
+
+    a=quaternion.e()
+    calibrate=a/q
+    print(q*a,(-q)/a)

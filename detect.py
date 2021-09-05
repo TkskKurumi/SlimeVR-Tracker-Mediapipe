@@ -16,22 +16,35 @@ lankle_Y=_j
 rankle_X=_i
 rankle_Y=_j
 BG_COLOR = (192, 192, 192) # gray
+height=720
+width=1280
 def landmark2point(landmark):
-  global height,width
-  x=landmark.x
-  y=-landmark.z
-  z=landmark.y*height/width
-  return geometry.point3d(x,y,z)
+    global height,width
+    x=landmark.x
+    y=-landmark.z
+    z=landmark.y*height/width
+    return geometry.point3d(x,y,z)
+lm2p=landmark2point
 running=True
 fps=1
+calibrate_quat=geometry.quaternion.e()
 def run():
+    
     global cap,hide_image,fps_handler,height,width,running,fps
-    global hip_X,hip_Y,lankle_X,lankle_Y,rankle_X,rankle_Y
+    global hip_X,hip_Y,lankle_X,lankle_Y,rankle_X,rankle_Y,calibrate_quat
     try:
         
         with mp_pose.Pose(
             min_detection_confidence=0.5,
-            min_tracking_confidence=0.7,model_complexity=1) as pose:
+            min_tracking_confidence=0.7,model_complexity=2) as pose:
+            calibrate_time=0
+            calibrated=True
+
+            #I found that x=x,y=-z,z=y make the axis of rotation right
+            #but I don't know why
+            camera_base=geometry.coordinate_sys(_i,_j,_k)
+            slimevr_base=geometry.coordinate_sys(lm2p(_i),lm2p(_j),lm2p(_k)).united()
+            
             while cap.isOpened():
                 fps_handler.limit_fps(30)
                 fps=fps_handler.frame()
@@ -113,18 +126,29 @@ def run():
                         #rankle_quat=rankle_axis.as_quaternion()
                         #rankle_sensor.send_quat(rankle_quat)
                     yaw,pitch,roll=geometry.quat_to_ypr(hip_quat)
-                    az="%.2ffps"%fps+"Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll)
+                    if(calibrate_time<time.time()):
+                        az="%.2ffps"%fps+"Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll)
+                        if(not calibrated):
+                            calibrated=True
+                            hip_coord=geometry.coordinate_sys.from_approx_xy(hip_X,hip_Y)
+                            q1=slimevr_base.as_quaternion()
+                            q2=hip_coord.as_quaternion()
+                            calibrate_quat=q1/q2
+                    else:
+                        az="%.1f seconds to calibrate"%(calibrate_time-time.time())
+                        
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(image,az,(300,300),font,1,(0,255,0),2)
                     
                 cv2.imshow('MediaPipe Pose', image)
                 k=cv2.waitKey(2) & 0xFF
                 if k == 27:
-                    
                     break
                 elif k==ord('h'):
                     hide_image=not hide_image
+                elif k==ord('c'):
+                    calibrate_time=time.time()+3
     except Exception as e:
-        print(e)
+        traceback.print_exc()
     running=False
     cv2.destroyAllWindows()
