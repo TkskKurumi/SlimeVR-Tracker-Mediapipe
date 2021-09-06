@@ -1,4 +1,4 @@
-import math,time
+import math,time,kdt
 from concurrent.futures import ThreadPoolExecutor
 import mediapipe as mp
 import UdpClient,geometry,random
@@ -33,6 +33,7 @@ lleg_X=_i
 lleg_Y=_j
 rleg_X=_i
 rleg_Y=_j
+calibrate_quat=geometry.quaternion.e()
 
 tp=ThreadPoolExecutor()
 tp.submit(detect.run)
@@ -70,6 +71,7 @@ while(detect.running):
     lleg_Y=linear(lleg_Y,detect.lleg_Y,smoothing)
     rleg_X=linear(rleg_X,detect.rleg_X,smoothing)
     rleg_Y=linear(rleg_Y,detect.rleg_Y,smoothing)
+    calibrate_quat=calibrate_quat.angle_mult(smoothing)*detect.get_calibrate().angle_mult(1-smoothing)
 
     quats=[]
     hip_quat=vecs2quat(hip_X,hip_Y)
@@ -79,9 +81,9 @@ while(detect.running):
     quats.append(vecs2quat(lleg_X,lleg_Y))
     quats.append(vecs2quat(rleg_X,rleg_Y))
     
-    
+    #calibrate_quat=detect.get_calibrate()
     for i in range(client_num):
-        clients[i].send_quat(detect.calibrate_quat*quats[i])
+        clients[i].send_quat(calibrate_quat*quats[i])
     ypr=geometry.quat_to_ypr(hip_quat)
     #print(smoothing)
     print("smooth tick/sec=%.1f, real tick/sec=%.1f, yaw=%.1f,pitch=%.1f,roll=%.1f"%(tps,detect.fps,*ypr),end='\r')

@@ -1,4 +1,4 @@
-from math import sqrt,atan2,asin
+from math import pi, sqrt,atan2,asin,cos,sin,acos
 import math
 
 from cv2 import calibrateCamera
@@ -219,34 +219,32 @@ class quaternion:
             return q*r.invert()
     def __abs__(self):
         return self.norm()
+    def unit(self):
+        return self/self.norm()
     def sqnorm(self):
         x,y,z=self.vec
         w=self.w
         return x*x+y*y+z*z+w*w
     def norm(self):
-        return sqrt(self.sqnorm)
+        return sqrt(self.sqnorm())
     def invert(self):
         return self.conjugate()/self.sqnorm()
-    def __str__(self):
+    def angle_mult(self,n):
+        theta=acos(self.w)
+        if(asign(sin(theta))==0):
+            return quaternion.e()
+        axis=self.vec/sin(theta)
+        ww=cos(theta*n)
+        axis1=axis*sin(theta*n)
         
-        return "quat(%s)"%(', '.join(['%.1f'%i for i in self]))
+        return quaternion(axis1,ww)
+    def __str__(self):
+        return "quat(%s)"%(', '.join(['%.2f'%i for i in self]))
     def __neg__(self):
         return quaternion(-self.vec,-self.w)
-if(__name__=='__main__'):
-    def _(x,y,z):
-        print(x,y,x**y,coordinate_sys(x,y,x**y).as_quaternion())
-    _(_i,_j,_k)
-    _(_i,_k,_j)
-    q=quaternion.from_xyzw(1,2,3,4)
-    q_1=q.invert()
-    print(q*q_1)
-    print(coordinate_sys(_i,_j,_k).as_quaternion())
-    
-    print(quaternion.e()/q,q_1)
 
-    q=quaternion.from_xyzw(1,2,3,4)
-    a=quaternion.from_xyzw(0.7,0,0,0.7)
-    calibrate=a/q
-    print(calibrate*q,calibrate*(-q))
-    print(quat_to_ypr(calibrate*q))
-    print(quat_to_ypr(calibrate*(-q)))
+if(__name__=='__main__'):
+    #q=quaternion.from_xyzw(1,2,3,4).unit()
+    q=quaternion.e()
+    print(quat_to_ypr(q))
+    print(quat_to_ypr(q.angle_mult(0.01)))

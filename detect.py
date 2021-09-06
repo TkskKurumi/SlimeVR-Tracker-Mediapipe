@@ -1,4 +1,4 @@
-import cv2,math,time,traceback
+import cv2,math,time,traceback,kdt
 import mediapipe as mp
 import UdpClient,geometry,random
 from fps_handler import fps_handler as FPSH
@@ -24,6 +24,11 @@ BG_COLOR = (192, 192, 192) # gray
 height=720
 width=1280
 def landmark2point(landmark):
+    
+    #Oh no I wrote wrong quat2yaw pitch roll convertion that actually
+    #returns pitch roll yaw, which is in wrong order
+    #But I didn't noticed that and thought that may be SlimeVR coordinate
+    #isn't same as camera coordinate and tried to convert this.
     global height,width
     x=landmark.x
     y=-landmark.z
@@ -32,25 +37,48 @@ def landmark2point(landmark):
 lm2p=landmark2point
 running=True
 fps=1
-calibrate_quat=geometry.quaternion.e()
+#calibrate_quat=geometry.quaternion.e()
 events=[]
+def vecs2quat(axisX,axisY):
+    cord_sys=geometry.coordinate_sys.from_approx_xy(axisX,axisY)
+    return cord_sys.as_quaternion()
+
+calibrate_key=[]
+calibrate_value=[]
+calibrate_kdt=None
+def get_calibrate(k=None):
+    #when facing direction change, the MediaPipe's Z detection may be not stable
+    #I'm trying to use different calibrate quat according to facing direction
+    global calibrate_key,calibrate_value,calibrate_kdt,hip_X,hip_Y
+    if(not calibrate_kdt):
+        return geometry.quaternion.e()
+    if(calibrate_num>len(calibrate_key)):
+        return geometry.quaternion.e()
+    if(k is None):
+        k=tuple(hip_X)+tuple(hip_Y)
+    id=calibrate_kdt.ann1(kdt.point(tuple(k))).id
+    #print(id)
+    return calibrate_value[id]
+calibrate_num=0
+camera_base=geometry.coordinate_sys(_i,_j,_k)
+slimevr_base=geometry.coordinate_sys(lm2p(_i),lm2p(_j),lm2p(_k)).united()
+#print(slimevr_base.axisZ)
 def run():
     
     global cap,hide_image,fps_handler,height,width,running,fps,events
-    global hip_X,hip_Y,lankle_X,lankle_Y,rankle_X,rankle_Y,calibrate_quat
+    global hip_X,hip_Y,lankle_X,lankle_Y,rankle_X,rankle_Y
     global lleg_X,lleg_Y,rleg_X,rleg_Y
+    global calibrate_key,calibrate_value,calibrate_kdt,calibrate_num
     try:
         
         with mp_pose.Pose(
             min_detection_confidence=0.5,
             min_tracking_confidence=0.7,model_complexity=2) as pose:
             calibrate_time=0
-            calibrated=True
 
             #I found that x=x,y=-z,z=y make the axis of rotation right
             #but I don't know why
-            camera_base=geometry.coordinate_sys(_i,_j,_k)
-            slimevr_base=geometry.coordinate_sys(lm2p(_i),lm2p(_j),lm2p(_k)).united()
+            
             
             while cap.isOpened():
                 fps_handler.limit_fps(30)
@@ -138,24 +166,35 @@ def run():
                         rleg_Z=hip_X**rleg_Y
                         rleg_X=rleg_Y**rleg_Z
 
-                    yaw,pitch,roll=geometry.quat_to_ypr(calibrate_quat*hip_quat)
+                    yaw,pitch,roll=geometry.quat_to_ypr(get_calibrate()*hip_quat)
                     if(calibrate_time<time.time()):
-                        if(time.time()<calibrate_time+2):
-                            az="%s %s"%(calibrate_quat*hip_quat,slimevr_base.as_quaternion())
-                        else:
-                            az="%.2ffps"%fps+"Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll)
-                        if(not calibrated):
+                        az="%.2ffps"%fps+"Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll)
+                        if(calibrate_num>len(calibrate_key)):
                             calibrated=True
-                            
-                            q1=slimevr_base.as_quaternion()
+                            az="calibrating"
+                            #q1=slimevr_base.as_quaternion()
                             q2=hip_quat
+                            hip_X1=geometry.point3d(hip_X.x,0,hip_X.z)
+                            hip_Y1=geometry.point3d(hip_Y.x,0,hip_Y.z)
+                            print('ln177',(hip_X1**hip_Y1).z>0)
+
+                            #make it on xy plane
+                            q1=vecs2quat(hip_X1,hip_Y1)
+                            print(geometry.quat_to_ypr(q1))
                             calibrate_quat=q1/q2
-                            yaw,pitch,roll=geometry.quat_to_ypr(calibrate_quat*hip_quat)
+                            key=tuple(hip_X)+tuple(hip_Y)
+                            calibrate_key.append(kdt.point(key))
+                            calibrate_value.append(calibrate_quat)
+                            if(calibrate_num<=len(calibrate_key)): #==
+
+                                calibrate_kdt=kdt.kdt()
+
+                                calibrate_kdt.build(calibrate_key)
+                            #yaw,pitch,roll=geometry.quat_to_ypr(calibrate_quat*hip_quat)
                             #print("Yaw%04dPitch%04dRoll%04d"%(yaw,pitch,roll))
-                            print('111')
-                            print('111')
+                            print(geometry.quat_to_ypr(calibrate_quat*q2))
                     else:
-                        az="%.1f seconds to calibrate"%(calibrate_time-time.time())
+                        az="%.1f seconds to calibrate,%d"%(calibrate_time-time.time(),calibrate_num)
                         
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(image,az,(300,300),font,1,(0,255,0),2)
@@ -168,7 +207,7 @@ def run():
                     hide_image=not hide_image
                 elif k==ord('c'):
                     calibrate_time=time.time()+3
-                    calibrated=False
+                    calibrate_num+=50
                 else:
                     events.append(('keypress',k))
     except Exception as e:
