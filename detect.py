@@ -174,11 +174,11 @@ def run():
                             az="calibrating"
                             #q1=slimevr_base.as_quaternion()
                             q2=hip_quat
-                            hip_X1=geometry.point3d(hip_X.x,0,hip_X.z)
-                            hip_Y1=geometry.point3d(hip_Y.x,0,hip_Y.z)
+                            hip_X1=geometry.point3d(hip_X.x,hip_X.y,0)  #no camera y, hotizontal
+                            hip_Y1=geometry.point3d(0,0,hip_Y.z)        #only camera y, vertical
                             print('ln177',(hip_X1**hip_Y1).z>0)
 
-                            #make it on xy plane
+                            #the this should make body aligned vertical
                             q1=vecs2quat(hip_X1,hip_Y1)
                             print(geometry.quat_to_ypr(q1))
                             calibrate_quat=q1/q2
