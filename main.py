@@ -52,6 +52,7 @@ while(detect.running):
             if(c in '12345'):
                 client_num=int(c)
                 print('client_num =',client_num)
+                clients[int(c)-1].send_handshake()
         else:
             print(i)
 
@@ -61,6 +62,7 @@ while(detect.running):
     dt=1/tps
     smoothing=math.e**(-dt*8)   #dt↑，smoothing↓
                                 #x(t)=x1+(x0-x1)*e^(-dt)
+    smoothing_slow=math.e**(-dt*2)
     lankle_X=linear(lankle_X,detect.lankle_X,smoothing)
     rankle_X=linear(rankle_X,detect.rankle_X,smoothing)
     lankle_Y=linear(lankle_Y,detect.lankle_Y,smoothing)
@@ -71,7 +73,7 @@ while(detect.running):
     lleg_Y=linear(lleg_Y,detect.lleg_Y,smoothing)
     rleg_X=linear(rleg_X,detect.rleg_X,smoothing)
     rleg_Y=linear(rleg_Y,detect.rleg_Y,smoothing)
-    calibrate_quat=calibrate_quat.angle_mult(smoothing)*detect.get_calibrate().angle_mult(1-smoothing)
+    calibrate_quat=calibrate_quat.angle_mult(smoothing_slow)*detect.get_calibrate().angle_mult(1-smoothing_slow)
 
     quats=[]
     hip_quat=vecs2quat(hip_X,hip_Y)
